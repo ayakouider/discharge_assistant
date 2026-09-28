@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pymongo
+python-multipart
+mongomock
+pydantic
+requests
+google-genai
+python-dotenv

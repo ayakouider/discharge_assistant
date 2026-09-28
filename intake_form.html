@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discharge Instructions — Intake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F7F8F6;
+    --ink: #17251F;
+    --primary: #2D5D52;
+    --primary-dark: #1F433B;
+    --muted: #6E7B76;
+    --line: #DCE2DE;
+    --panel: #FFFFFF;
+    --er: #B0432C;
+    --er-bg: #FBEDE9;
+    --clinic: #C98A3E;
+    --clinic-bg: #FAF1E2;
+    --vague-bg: #FFF7E8;
+    --vague-border: #D9A441;
+    --radius: 3px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  header.topbar {
+    background: var(--primary-dark);
+    color: #EAF2EF;
+    padding: 18px 24px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header.topbar .title { font-size: 17px; font-weight: 600; letter-spacing: 0.01em; }
+  header.topbar .context { font-size: 13px; color: #B9D2CA; }
+  header.topbar .context .code { color: #fff; font-weight: 500; }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 20px 140px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---- Start screen ---- */
+  .start-choice {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .choice-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 18px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .choice-card:hover { border-color: var(--primary); }
+  .choice-card h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .choice-card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(45,93,82,0.12);
+  }
+  .field textarea { resize: vertical; min-height: 44px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: transparent; color: var(--primary); border-color: var(--line); }
+  .btn-secondary:hover { border-color: var(--primary); }
+  .btn-text {
+    background: none; border: none; color: var(--primary);
+    font-size: 13.5px; font-weight: 500; padding: 4px 0;
+  }
+  .btn-remove {
+    background: none; border: none; color: var(--muted);
+    font-size: 13px; padding: 2px 6px;
+  }
+  .btn-remove:hover { color: var(--er); }
+
+  /* ---- Form sections ---- */
+  section.group {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  section.group > .group-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  section.group > .group-header h2 { margin: 0; font-size: 15px; font-weight: 600; }
+  section.group > .group-header p { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
+  section.group > .group-body { padding: 16px 18px; }
+
+  .item-row {
+    border-bottom: 1px dashed var(--line);
+    padding: 14px 0;
+  }
+  .item-row:first-child { padding-top: 0; }
+  .item-row:last-of-type { border-bottom: none; padding-bottom: 4px; }
+  .item-row-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .item-row-head .idx { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+  .vague-warning {
+    display: none;
+    background: var(--vague-bg);
+    border: 1px solid var(--vague-border);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 12.5px;
+    color: #7A5314;
+    margin-top: 6px;
+  }
+  .vague-warning.show { display: block; }
+
+  /* ---- Sticky bottom bar ---- */
+  .action-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  .action-bar-inner { max-width: 640px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+  /* ---- Review screen ---- */
+  .review-section { margin-bottom: 22px; }
+  .review-section h3 {
+    font-size: 13px; text-transform: none; color: var(--muted);
+    font-weight: 600; margin: 0 0 10px; border-bottom: 1px solid var(--line); padding-bottom: 6px;
+  }
+  .review-item { padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+  .review-item:last-child { border-bottom: none; }
+  .review-item .meta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11.5px; font-weight: 600; margin-left: 8px;
+  }
+  .badge-er { background: var(--er-bg); color: var(--er); }
+  .badge-clinic { background: var(--clinic-bg); color: var(--clinic); }
+  .badge-changed { background: var(--er-bg); color: var(--primary-dark); background: #E3EEEA; color: var(--primary-dark); }
+  .badge-unchanged { background: #F0F1EF; color: var(--muted); }
+  .review-section.unchanged { opacity: 0.55; }
+  .empty-note { color: var(--muted); font-size: 13.5px; font-style: italic; }
+
+  /* ---- Success screen ---- */
+  .success-code-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 26px; text-align: center; margin-top: 20px;
+  }
+  .success-code-box .label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .success-code-box .code { font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 500; letter-spacing: 0.08em; }
+
+  .toast {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    background: var(--primary-dark); color: #fff; padding: 10px 18px;
+    border-radius: var(--radius); font-size: 13.5px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .toast.show { opacity: 1; }
+
+  h1.page-title { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .page-sub { color: var(--muted); font-size: 13.5px; margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title">Discharge Instructions — Doctor Intake</div>
+  <div class="context" id="topbarContext"></div>
+</header>
+
+<main>
+
+  <!-- ================= START SCREEN ================= -->
+  <div class="screen active" id="screen-start">
+    <h1 class="page-title">Set up discharge instructions</h1>
+    <p class="page-sub">Create a new patient record, or continue one already started.</p>
+    <div class="start-choice">
+      <button class="choice-card" onclick="goToNewPatient()">
+        <h3>New patient</h3>
+        <p>Start discharge instructions for a patient leaving today.</p>
+      </button>
+      <button class="choice-card" onclick="goToSearchPatients()">
+        <h3>Search patients</h3>
+        <p>Find a patient by name, code, or phone number, or browse everyone.</p>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= SEARCH / BROWSE SCREEN ================= -->
+  <div class="screen" id="screen-search">
+    <h1 class="page-title">Find a patient</h1>
+    <p class="page-sub">Search by name, patient code, or phone number — or leave blank to see everyone.</p>
+    <div class="field">
+      <label for="search-doctor">Your name</label>
+      <input type="text" id="search-doctor" placeholder="Dr. Patel">
+    </div>
+    <div class="field">
+      <input type="text" id="search-query" placeholder="Search by name, code, or phone…" oninput="debouncedSearch()">
+    </div>
+    <div id="search-results"></div>
+    <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
+  </div>
+
+  <!-- ================= NEW PATIENT SCREEN ================= -->
+  <div class="screen" id="screen-newpatient">
+    <h1 class="page-title">New patient</h1>
+    <p class="page-sub">A shareable code will be generated once you save.</p>
+    <div class="field">
+      <label for="np-doctor">Your name</label>
+      <input type="text" id="np-doctor" placeholder="Dr. Patel">
+    </div>
+    <div class="field">
+      <label for="np-name">Patient name (optional, for your reference only)</label>
+      <input type="text" id="np-name" placeholder="J. Smith">
+    </div>
+    <div class="field">
+      <label for="np-procedure">Procedure</label>
+      <input type="text" id="np-procedure" placeholder="Total knee replacement">
+    </div>
+    <div class="field">
+      <label for="np-phone">Phone number (optional, prevents duplicate records)</label>
+      <input type="text" id="np-phone" placeholder="(555) 123-4567">
+    </div>
+    <button class="btn btn-primary" onclick="createPatient()">Create patient &amp; continue</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
+  </div>
+
+  <!-- ================= EXISTING PATIENT SCREEN ================= -->
+  <div class="screen" id="screen-existing">
+    <h1 class="page-title">Continue existing patient</h1>
+    <div class="field">
+      <label for="ex-doctor">Your name</label>
+      <input type="text" id="ex-doctor" placeholder="Dr. Patel">
+    </div>
+    <div class="field">
+      <label for="ex-code">Patient code</label>
+      <input type="text" id="ex-code" placeholder="e.g. 928KAD" class="mono" style="text-transform:uppercase">
+    </div>
+    <button class="btn btn-primary" onclick="loadPatient()">Continue</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
+  </div>
+
+  <!-- ================= INTAKE FORM SCREEN ================= -->
+  <div class="screen" id="screen-form">
+    <h1 class="page-title">Discharge instructions</h1>
+    <p class="page-sub" id="form-sub"></p>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>Medications</h2>
+        <p>Name, dose, and how often to take it.</p>
+      </div>
+      <div class="group-body" id="medications-list"></div>
+      <div style="padding: 0 18px 16px;">
+        <button class="btn-text" onclick="addMedication()">+ Add medication</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>Activity restrictions</h2>
+        <p>What the patient should avoid, and for how long.</p>
+      </div>
+      <div class="group-body" id="restrictions-list"></div>
+      <div style="padding: 0 18px 16px;">
+        <button class="btn-text" onclick="addRestriction()">+ Add restriction</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>Wound care</h2>
+        <p>Step-by-step, in order.</p>
+      </div>
+      <div class="group-body" id="woundcare-list"></div>
+      <div style="padding: 0 18px 16px;">
+        <button class="btn-text" onclick="addWoundCare()">+ Add step</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>Red flags</h2>
+        <p>Specific symptoms that mean the patient should call the clinic or go to the ER. Be as concrete as possible — "fever above 101°F," not "if it gets worse."</p>
+      </div>
+      <div class="group-body" id="redflags-list"></div>
+      <div style="padding: 0 18px 16px;">
+        <button class="btn-text" onclick="addRedFlag()">+ Add red flag</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>Follow-up appointment</h2>
+      </div>
+      <div class="group-body">
+        <div class="field-row">
+          <div class="field">
+            <label for="fu-date">Date</label>
+            <input type="date" id="fu-date">
+          </div>
+          <div class="field">
+            <label for="fu-provider">Provider</label>
+            <input type="text" id="fu-provider" placeholder="Dr. Patel">
+          </div>
+        </div>
+        <div class="field">
+          <label for="fu-location">Location</label>
+          <input type="text" id="fu-location" placeholder="Ortho Clinic, Room 4">
+        </div>
+        <div class="field">
+          <label for="fu-notes">Notes</label>
+          <textarea id="fu-notes"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <div class="group-header">
+        <h2>General notes</h2>
+      </div>
+      <div class="group-body" id="notes-list"></div>
+      <div style="padding: 0 18px 16px;">
+        <button class="btn-text" onclick="addNote()">+ Add note</button>
+      </div>
+    </section>
+
+    <section class="group" id="symptom-reports-section" style="display:none;">
+      <div class="group-header">
+        <h2>Patient-logged symptoms</h2>
+        <p>Reported by the patient through their assistant — read-only, not part of what you save here.</p>
+      </div>
+      <div class="group-body" id="symptom-reports-list"></div>
+    </section>
+
+  </div>
+
+  <!-- ================= REVIEW SCREEN ================= -->
+  <div class="screen" id="screen-review">
+    <h1 class="page-title">Review before saving</h1>
+    <p class="page-sub">Check everything is correct — this is what the patient's assistant will read from.</p>
+    <div id="review-content"></div>
+  </div>
+
+  <!-- ================= SUCCESS SCREEN ================= -->
+  <div class="screen" id="screen-success">
+    <h1 class="page-title">Saved</h1>
+    <p class="page-sub">Give this code to the patient so they can link their assistant to these instructions.</p>
+    <div class="success-code-box">
+      <div class="label">Patient code</div>
+      <div class="code mono" id="success-code">——————</div>
+    </div>
+    <div style="margin-top: 18px; display:flex; gap:10px;">
+      <button class="btn btn-secondary" onclick="editAfterSave()">Make another change</button>
+      <button class="btn btn-primary" onclick="resetToStart()">Done</button>
+    </div>
+  </div>
+
+</main>
+
+<div class="action-bar" id="actionBar" style="display:none;">
+  <div class="action-bar-inner">
+    <button class="btn btn-secondary" id="actionBarBack" onclick="handleBack()">Back</button>
+    <button class="btn btn-primary" id="actionBarNext" onclick="handleNext()">Review &amp; save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------
+const API_BASE = "http://localhost:8000";
+
+// ---------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------
+let state = {
+  doctor: "",
+  patientCode: null,
+  patientName: null,
+  procedure: null,
+  medications: [],
+  restrictions: [],
+  woundCare: [],
+  redFlags: [],
+  followUp: {},
+  notes: [],
+  isUpdateMode: false,
+};
+let originalSnapshot = null; // set on loadPatient(); used to diff old vs new before saving
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+
+// ---------------------------------------------------------------------
+// Diffing: strip internal/audit fields so comparisons reflect only what a
+// doctor actually edited, not ids/timestamps that differ trivially.
+// ---------------------------------------------------------------------
+function stripInternal(obj) {
+  if (!obj) return obj;
+  const { id, item_id, active, superseded_by, set_by, created_at, flagged_vague, ...rest } = obj;
+  return rest;
+}
+function cloneComparableState() {
+  return {
+    medications: state.medications.map(stripInternal),
+    restrictions: state.restrictions.map(stripInternal),
+    woundCare: state.woundCare.map(stripInternal),
+    redFlags: state.redFlags.map(stripInternal),
+    followUp: stripInternal(state.followUp) || {},
+    notes: state.notes.map(stripInternal),
+  };
+}
+function groupChanged(key) {
+  if (!originalSnapshot) return true; // no snapshot = new patient, everything "changed"
+  const current = key === "followUp" ? stripInternal(state.followUp) || {} : state[key].map(stripInternal);
+  return JSON.stringify(current) !== JSON.stringify(originalSnapshot[key]);
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  const bar = document.getElementById("actionBar");
+  bar.style.display = (id === "screen-form" || id === "screen-review") ? "flex" : "none";
+  document.getElementById("actionBarNext").textContent = id === "screen-review" ? "Confirm & save" : "Review & save";
+  document.getElementById("actionBarBack").textContent = id === "screen-review" ? "Back to edit" : "Back";
+  updateTopbar();
+  window.scrollTo(0,0);
+}
+
+function updateTopbar() {
+  const el = document.getElementById("topbarContext");
+  el.innerHTML = state.patientCode
+    ? `Patient code: <span class="code mono">${state.patientCode}</span>`
+    : "";
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ---------------------------------------------------------------------
+// Navigation
+// ---------------------------------------------------------------------
+function goToNewPatient() { showScreen("screen-newpatient"); }
+function goToExistingPatient() { showScreen("screen-existing"); }
+function goToSearchPatients() {
+  document.getElementById("search-query").value = "";
+  document.getElementById("search-results").innerHTML = "";
+  showScreen("screen-search");
+  runSearch(""); // empty query = browse everyone
+}
+
+function handleBack() {
+  if (document.getElementById("screen-review").classList.contains("active")) {
+    showScreen("screen-form");
+  } else {
+    showScreen("screen-start");
+  }
+}
+
+function handleNext() {
+  if (document.getElementById("screen-form").classList.contains("active")) {
+    syncFollowUpFromInputs();
+    renderReview();
+    showScreen("screen-review");
+  } else {
+    saveIntake();
+  }
+}
+
+function resetToStart() {
+  state = { doctor: state.doctor, patientCode: null, patientName: null, procedure: null,
+            medications: [], restrictions: [], woundCare: [], redFlags: [], followUp: {}, notes: [],
+            isUpdateMode: false };
+  originalSnapshot = null;
+  showScreen("screen-start");
+}
+
+function editAfterSave() {
+  // The just-saved state is now the current record — re-snapshot so a
+  // further edit diffs against what's actually saved, not the pre-save state.
+  originalSnapshot = cloneComparableState();
+  showScreen("screen-form");
+}
+
+// ---------------------------------------------------------------------
+// API calls
+// ---------------------------------------------------------------------
+async function createPatient() {
+  const doctor = document.getElementById("np-doctor").value.trim();
+  const name = document.getElementById("np-name").value.trim();
+  const procedure = document.getElementById("np-procedure").value.trim();
+  const phone = document.getElementById("np-phone").value.trim();
+
+  if (!doctor) {
+    toast("Enter your name first");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/patients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        display_name: name || null,
+        procedure_name: procedure || null,
+        phone_number: phone || null
+      }),
+    });
+
+    if (res.status === 409) {
+      const err = await res.json();
+      toast(err.detail || "A patient with this phone number already exists");
+      return;
+    }
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("CREATE PATIENT ERROR:", errorText);
+      throw new Error(`Create patient failed (${res.status}): ${errorText}`);
+    }
+
+    const data = await res.json();
+
+    state.doctor = doctor;
+    state.patientCode = data.patient_code;
+    state.patientName = name;
+    state.procedure = procedure;
+    state.isUpdateMode = false;
+    originalSnapshot = null;
+
+    startEmptyForm();
+    showScreen("screen-form");
+  } catch (err) {
+    console.error("CREATE PATIENT ERROR:", err);
+    toast("Couldn't reach the API — is it running on " + API_BASE + "?");
+  }
+}
+
+async function loadPatient() {
+  const doctor = document.getElementById("ex-doctor").value.trim();
+  const code = document.getElementById("ex-code").value.trim().toUpperCase();
+  if (!doctor || !code) { toast("Enter your name and the patient code"); return; }
+  await loadPatientByCode(doctor, code);
+}
+
+// Shared by both the "Existing patient code" screen and clicking a search
+// result — either way, loading a patient means the same sequence of calls.
+async function loadPatientByCode(doctor, code) {
+  try {
+    const res = await fetch(`${API_BASE}/patients/${code}/current-instructions`);
+    if (res.status === 404) { toast("No patient found with that code"); return; }
+    if (!res.ok) throw new Error("Request failed");
+    const data = await res.json();
+
+    state.doctor = doctor;
+    state.patientCode = code;
+    state.patientName = data.display_name;
+    state.procedure = data.procedure_name;
+    state.medications = (data.medications || []).map(m => ({ id: uid(), ...m }));
+    state.restrictions = (data.activity_restrictions || []).map(r => ({ id: uid(), ...r }));
+    state.woundCare = (data.wound_care || []).map(w => ({ id: uid(), ...w }));
+    state.redFlags = (data.red_flags || []).map(r => ({ id: uid(), ...r }));
+    state.followUp = data.follow_up || {};
+    state.notes = (data.general_notes || []).map(n => ({ id: uid(), ...n }));
+    state.isUpdateMode = true;
+
+    // Snapshot AFTER building internal state, so later diffing compares
+    // apples to apples (same shape, same stripped fields) rather than the
+    // raw API response shape.
+    originalSnapshot = cloneComparableState();
+
+    await loadSymptomReports(code);
+
+    renderAll();
+    showScreen("screen-form");
+    toast("Loaded current instructions — only what you change will be saved as an update");
+  } catch (err) {
+    toast("Couldn't reach the API — is it running on " + API_BASE + "?");
+  }
+}
+
+// ---------------------------------------------------------------------
+// Search / browse
+// ---------------------------------------------------------------------
+let searchDebounceTimer = null;
+function debouncedSearch() {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    runSearch(document.getElementById("search-query").value.trim());
+  }, 300);
+}
+
+async function runSearch(query) {
+  const resultsEl = document.getElementById("search-results");
+  try {
+    const url = query
+      ? `${API_BASE}/patients/search?q=${encodeURIComponent(query)}`
+      : `${API_BASE}/patients/search`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("search failed");
+    const data = await res.json();
+    renderSearchResults(data.results || []);
+  } catch (err) {
+    resultsEl.innerHTML = `<p class="empty-note">Couldn't reach the API.</p>`;
+  }
+}
+
+function renderSearchResults(results) {
+  const el = document.getElementById("search-results");
+  if (results.length === 0) {
+    el.innerHTML = `<p class="empty-note">No patients found.</p>`;
+    return;
+  }
+  el.innerHTML = results.map(p => `
+    <button class="choice-card" onclick="selectSearchResult('${p.patient_code}')">
+      <h3>${esc(p.display_name || "(no name)")} <span class="mono" style="font-weight:400; font-size:12px; color: var(--muted);">${esc(p.patient_code)}</span></h3>
+      <p>${esc(p.procedure_name || "No procedure noted")}${p.phone_number ? " — " + esc(p.phone_number) : ""}</p>
+    </button>
+  `).join("");
+}
+
+function selectSearchResult(code) {
+  const doctor = document.getElementById("search-doctor").value.trim();
+  if (!doctor) { toast("Enter your name first"); return; }
+  loadPatientByCode(doctor, code);
+}
+
+async function loadSymptomReports(code) {
+  const section = document.getElementById("symptom-reports-section");
+  const list = document.getElementById("symptom-reports-list");
+  try {
+    const res = await fetch(`${API_BASE}/patients/${code}/symptom-reports`);
+    if (!res.ok) throw new Error("failed");
+    const data = await res.json();
+    const reports = data.symptom_reports || [];
+
+    if (reports.length === 0) {
+      section.style.display = "none";
+      return;
+    }
+    section.style.display = "block";
+    list.innerHTML = reports.map(r => `
+      <div class="item-row">
+        <div class="meta" style="margin-bottom:4px;">${esc(new Date(r.created_at).toLocaleString())}</div>
+        <div>${esc(r.note)}</div>
+      </div>
+    `).join("");
+  } catch (err) {
+    section.style.display = "none";
+  }
+}
+
+async function checkVague(symptomText) {
+  if (!symptomText || symptomText.trim().length < 4) return null;
+  try {
+    const res = await fetch(`${API_BASE}/red-flags/check?symptom=${encodeURIComponent(symptomText)}`, { method: "POST" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+async function saveIntake() {
+  // Empty date inputs send "" from the browser, and Pydantic's Optional[date]
+  // on the backend rejects "" as an invalid date (it wants null or a real
+  // date, not an empty string) — this is what was causing the 422 errors.
+  // Every date-bearing field gets cleaned through this before sending.
+  const cleanDates = (obj, dateFields) => {
+    const copy = { ...obj };
+    for (const field of dateFields) {
+      if (copy[field] === "") copy[field] = null;
+    }
+    return copy;
+  };
+
+  const fullPayload = {
+    medications: state.medications
+      .map(({id, active, superseded_by, item_id, set_by, created_at, ...rest}) => rest)
+      .map(m => cleanDates(m, ["start_date", "end_date"])),
+    activity_restrictions: state.restrictions
+      .map(({id, active, superseded_by, item_id, set_by, created_at, ...rest}) => rest)
+      .map(r => cleanDates(r, ["until_date"])),
+    wound_care: state.woundCare.map(({id, active, superseded_by, item_id, set_by, created_at, ...rest}) => rest),
+    red_flags: state.redFlags.map(({id, active, superseded_by, item_id, set_by, created_at, flagged_vague, ...rest}) => rest),
+    follow_up: (state.followUp && (state.followUp.appointment_date || state.followUp.provider_name || state.followUp.location || state.followUp.notes))
+      ? { appointment_date: state.followUp.appointment_date || null, provider_name: state.followUp.provider_name || null, location: state.followUp.location || null, notes: state.followUp.notes || null }
+      : null,
+    general_notes: state.notes.map(({id, active, superseded_by, item_id, set_by, created_at, ...rest}) => rest),
+  };
+
+  // In update mode, only include groups that actually changed — sending an
+  // unchanged group would needlessly supersede it with identical content,
+  // and would make the patient-side "your doctor updated X" surfacing fire
+  // on fields nothing actually happened to.
+  const groupKeyMap = { medications: "medications", activity_restrictions: "restrictions",
+    wound_care: "woundCare", red_flags: "redFlags", follow_up: "followUp", general_notes: "notes" };
+  const payload = { set_by: state.doctor };
+  for (const [apiKey, stateKey] of Object.entries(groupKeyMap)) {
+    if (!state.isUpdateMode || groupChanged(stateKey)) {
+      payload[apiKey] = fullPayload[apiKey];
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/patients/${state.patientCode}/intake`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await res.text();
+
+    console.log("===== INTAKE DEBUG =====");
+    console.log("STATUS:", res.status);
+    console.log("RESPONSE:", responseText);
+    console.log("PAYLOAD:", JSON.stringify(payload, null, 2));
+    console.log("========================");
+
+    if (!res.ok) {
+      throw new Error(`Request failed (${res.status}): ${responseText}`);
+    }
+
+    const data = responseText ? JSON.parse(responseText) : {};
+    console.log("INTAKE SAVED:", data);
+
+    document.getElementById("success-code").textContent = state.patientCode;
+    showScreen("screen-success");
+  } catch (err) {
+    toast("Save failed — check the API is running and try again");
+  }
+}
+
+// ---------------------------------------------------------------------
+// Form rendering — Medications
+// ---------------------------------------------------------------------
+function startEmptyForm() {
+  state.medications = [];
+  state.restrictions = [];
+  state.woundCare = [];
+  state.redFlags = [];
+  state.followUp = {};
+  state.notes = [];
+  renderAll();
+}
+
+function renderAll() {
+  document.getElementById("form-sub").textContent =
+    (state.patientName ? state.patientName + " — " : "") + (state.procedure || "Discharge instructions");
+  renderMedications();
+  renderRestrictions();
+  renderWoundCare();
+  renderRedFlags();
+  renderFollowUpInputs();
+  renderNotes();
+}
+
+function addMedication() {
+  state.medications.push({ id: uid(), name: "", dose: "", frequency: "", start_date: "", end_date: "", notes: "" });
+  renderMedications();
+}
+function removeMedication(id) {
+  state.medications = state.medications.filter(m => m.id !== id);
+  renderMedications();
+}
+function renderMedications() {
+  const el = document.getElementById("medications-list");
+  el.innerHTML = "";
+  if (state.medications.length === 0) el.innerHTML = `<p class="empty-note">No medications added yet.</p>`;
+  state.medications.forEach((m, i) => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `
+      <div class="item-row-head">
+        <span class="idx">Medication ${i + 1}</span>
+        <button class="btn-remove" onclick="removeMedication('${m.id}')">Remove</button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Name</label>
+          <input type="text" value="${esc(m.name)}" oninput="updateMed('${m.id}','name',this.value)"></div>
+        <div class="field"><label>Dose</label>
+          <input type="text" value="${esc(m.dose)}" oninput="updateMed('${m.id}','dose',this.value)"></div>
+      </div>
+      <div class="field"><label>Frequency</label>
+        <input type="text" value="${esc(m.frequency)}" placeholder="e.g. every 6 hours as needed" oninput="updateMed('${m.id}','frequency',this.value)"></div>
+      <div class="field-row">
+        <div class="field"><label>Start date</label>
+          <input type="date" value="${esc(m.start_date)}" oninput="updateMed('${m.id}','start_date',this.value)"></div>
+        <div class="field"><label>End date</label>
+          <input type="date" value="${esc(m.end_date)}" oninput="updateMed('${m.id}','end_date',this.value)"></div>
+      </div>
+      <div class="field"><label>Notes</label>
+        <input type="text" value="${esc(m.notes)}" placeholder="e.g. take with food" oninput="updateMed('${m.id}','notes',this.value)"></div>
+    `;
+    el.appendChild(row);
+  });
+}
+function updateMed(id, field, value) {
+  const m = state.medications.find(x => x.id === id);
+  if (m) m[field] = value;
+}
+
+// ---------------------------------------------------------------------
+// Activity restrictions
+// ---------------------------------------------------------------------
+function addRestriction() {
+  state.restrictions.push({ id: uid(), description: "", until_date: "", notes: "" });
+  renderRestrictions();
+}
+function removeRestriction(id) {
+  state.restrictions = state.restrictions.filter(r => r.id !== id);
+  renderRestrictions();
+}
+function renderRestrictions() {
+  const el = document.getElementById("restrictions-list");
+  el.innerHTML = "";
+  if (state.restrictions.length === 0) el.innerHTML = `<p class="empty-note">No restrictions added yet.</p>`;
+  state.restrictions.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `
+      <div class="item-row-head">
+        <span class="idx">Restriction ${i + 1}</span>
+        <button class="btn-remove" onclick="removeRestriction('${r.id}')">Remove</button>
+      </div>
+      <div class="field"><label>Description</label>
+        <input type="text" value="${esc(r.description)}" placeholder="e.g. No lifting over 10 lbs" oninput="updateRestriction('${r.id}','description',this.value)"></div>
+      <div class="field-row">
+        <div class="field"><label>Until</label>
+          <input type="date" value="${esc(r.until_date)}" oninput="updateRestriction('${r.id}','until_date',this.value)"></div>
+        <div class="field"><label>Notes</label>
+          <input type="text" value="${esc(r.notes)}" oninput="updateRestriction('${r.id}','notes',this.value)"></div>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+function updateRestriction(id, field, value) {
+  const r = state.restrictions.find(x => x.id === id);
+  if (r) r[field] = value;
+}
+
+// ---------------------------------------------------------------------
+// Wound care
+// ---------------------------------------------------------------------
+function addWoundCare() {
+  state.woundCare.push({ id: uid(), step_order: state.woundCare.length + 1, instruction: "", frequency: "" });
+  renderWoundCare();
+}
+function removeWoundCare(id) {
+  state.woundCare = state.woundCare.filter(w => w.id !== id);
+  state.woundCare.forEach((w, i) => w.step_order = i + 1);
+  renderWoundCare();
+}
+function renderWoundCare() {
+  const el = document.getElementById("woundcare-list");
+  el.innerHTML = "";
+  if (state.woundCare.length === 0) el.innerHTML = `<p class="empty-note">No wound care steps added yet.</p>`;
+  state.woundCare.forEach((w, i) => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `
+      <div class="item-row-head">
+        <span class="idx">Step ${i + 1}</span>
+        <button class="btn-remove" onclick="removeWoundCare('${w.id}')">Remove</button>
+      </div>
+      <div class="field"><label>Instruction</label>
+        <input type="text" value="${esc(w.instruction)}" placeholder="e.g. Change dressing" oninput="updateWoundCare('${w.id}','instruction',this.value)"></div>
+      <div class="field"><label>Frequency</label>
+        <input type="text" value="${esc(w.frequency)}" placeholder="e.g. daily" oninput="updateWoundCare('${w.id}','frequency',this.value)"></div>
+    `;
+    el.appendChild(row);
+  });
+}
+function updateWoundCare(id, field, value) {
+  const w = state.woundCare.find(x => x.id === id);
+  if (w) w[field] = value;
+}
+
+// ---------------------------------------------------------------------
+// Red flags (with live specificity check)
+// ---------------------------------------------------------------------
+function addRedFlag() {
+  state.redFlags.push({ id: uid(), symptom: "", action: "call_clinic", notes: "", flagged_vague: false });
+  renderRedFlags();
+}
+function removeRedFlag(id) {
+  state.redFlags = state.redFlags.filter(r => r.id !== id);
+  renderRedFlags();
+}
+function renderRedFlags() {
+  const el = document.getElementById("redflags-list");
+  el.innerHTML = "";
+  if (state.redFlags.length === 0) el.innerHTML = `<p class="empty-note">No red flags added yet.</p>`;
+  state.redFlags.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `
+      <div class="item-row-head">
+        <span class="idx">Red flag ${i + 1}</span>
+        <button class="btn-remove" onclick="removeRedFlag('${r.id}')">Remove</button>
+      </div>
+      <div class="field"><label>Symptom</label>
+        <input type="text" value="${esc(r.symptom)}" placeholder="e.g. Fever above 101°F" oninput="updateRedFlag('${r.id}','symptom',this.value)" onblur="checkRedFlagVague('${r.id}')"></div>
+      <div class="vague-warning" id="vague-${r.id}"></div>
+      <div class="field-row">
+        <div class="field"><label>Action</label>
+          <select onchange="updateRedFlag('${r.id}','action',this.value)">
+            <option value="call_clinic" ${r.action === "call_clinic" ? "selected" : ""}>Call clinic</option>
+            <option value="go_to_er" ${r.action === "go_to_er" ? "selected" : ""}>Go to ER now</option>
+          </select>
+        </div>
+        <div class="field"><label>Notes</label>
+          <input type="text" value="${esc(r.notes)}" oninput="updateRedFlag('${r.id}','notes',this.value)"></div>
+      </div>
+    `;
+    el.appendChild(row);
+    if (r.flagged_vague) showVagueWarning(r.id, "This may be too general — try naming the exact symptom.");
+  });
+}
+function updateRedFlag(id, field, value) {
+  const r = state.redFlags.find(x => x.id === id);
+  if (r) r[field] = value;
+}
+async function checkRedFlagVague(id) {
+  const r = state.redFlags.find(x => x.id === id);
+  if (!r || !r.symptom) return;
+  const result = await checkVague(r.symptom);
+  if (result) {
+    r.flagged_vague = result.is_vague;
+    if (result.is_vague) showVagueWarning(id, result.reason);
+    else hideVagueWarning(id);
+  }
+}
+function showVagueWarning(id, reason) {
+  const el = document.getElementById(`vague-${id}`);
+  if (!el) return;
+  el.textContent = reason;
+  el.classList.add("show");
+}
+function hideVagueWarning(id) {
+  const el = document.getElementById(`vague-${id}`);
+  if (!el) return;
+  el.classList.remove("show");
+}
+
+// ---------------------------------------------------------------------
+// Follow-up (single item, not repeatable)
+// ---------------------------------------------------------------------
+function renderFollowUpInputs() {
+  document.getElementById("fu-date").value = state.followUp.appointment_date || "";
+  document.getElementById("fu-provider").value = state.followUp.provider_name || "";
+  document.getElementById("fu-location").value = state.followUp.location || "";
+  document.getElementById("fu-notes").value = state.followUp.notes || "";
+}
+function syncFollowUpFromInputs() {
+  state.followUp = {
+    appointment_date: document.getElementById("fu-date").value || null,
+    provider_name: document.getElementById("fu-provider").value || null,
+    location: document.getElementById("fu-location").value || null,
+    notes: document.getElementById("fu-notes").value || null,
+  };
+}
+
+// ---------------------------------------------------------------------
+// General notes
+// ---------------------------------------------------------------------
+function addNote() {
+  state.notes.push({ id: uid(), note: "" });
+  renderNotes();
+}
+function removeNote(id) {
+  state.notes = state.notes.filter(n => n.id !== id);
+  renderNotes();
+}
+function renderNotes() {
+  const el = document.getElementById("notes-list");
+  el.innerHTML = "";
+  if (state.notes.length === 0) el.innerHTML = `<p class="empty-note">No general notes added yet.</p>`;
+  state.notes.forEach((n, i) => {
+    const row = document.createElement("div");
+    row.className = "item-row";
+    row.innerHTML = `
+      <div class="item-row-head">
+        <span class="idx">Note ${i + 1}</span>
+        <button class="btn-remove" onclick="removeNote('${n.id}')">Remove</button>
+      </div>
+      <div class="field"><textarea oninput="updateNote('${n.id}',this.value)">${esc(n.note)}</textarea></div>
+    `;
+    el.appendChild(row);
+  });
+}
+function updateNote(id, value) {
+  const n = state.notes.find(x => x.id === id);
+  if (n) n.note = value;
+}
+
+// ---------------------------------------------------------------------
+// Review screen
+// ---------------------------------------------------------------------
+function renderReview() {
+  const el = document.getElementById("review-content");
+  let html = "";
+
+  if (state.isUpdateMode) {
+    html += `<p class="sub" style="margin-bottom:16px;">Only the sections marked "Changed" below will be saved as an update — everything else stays exactly as your patient already has it.</p>`;
+  }
+
+  html += reviewGroup("Medications", "medications", state.medications, m =>
+    `<div class="review-item"><strong>${esc(m.name)}</strong> — ${esc(m.dose)}, ${esc(m.frequency)}
+     ${m.notes ? `<div class="meta">${esc(m.notes)}</div>` : ""}</div>`);
+
+  html += reviewGroup("Activity restrictions", "restrictions", state.restrictions, r =>
+    `<div class="review-item">${esc(r.description)}
+     ${r.until_date ? `<div class="meta">Until ${esc(r.until_date)}</div>` : ""}</div>`);
+
+  html += reviewGroup("Wound care", "woundCare", state.woundCare, w =>
+    `<div class="review-item">${w.step_order}. ${esc(w.instruction)} ${w.frequency ? "— " + esc(w.frequency) : ""}</div>`);
+
+  html += reviewGroup("Red flags", "redFlags", state.redFlags, r =>
+    `<div class="review-item">${esc(r.symptom)}
+     <span class="badge ${r.action === "go_to_er" ? "badge-er" : "badge-clinic"}">${r.action === "go_to_er" ? "Go to ER" : "Call clinic"}</span>
+     ${r.flagged_vague ? `<div class="meta">⚠ Flagged as potentially too vague</div>` : ""}</div>`);
+
+  const followUpChanged = !state.isUpdateMode || groupChanged("followUp");
+  html += `<div class="review-section${followUpChanged ? "" : " unchanged"}">
+    <h3>Follow-up ${state.isUpdateMode ? `<span class="badge ${followUpChanged ? "badge-changed" : "badge-unchanged"}">${followUpChanged ? "Changed" : "No change"}</span>` : ""}</h3>`;
+  if (state.followUp && (state.followUp.appointment_date || state.followUp.provider_name)) {
+    html += `<div class="review-item">${esc(state.followUp.appointment_date || "No date set")}
+      ${state.followUp.provider_name ? " — " + esc(state.followUp.provider_name) : ""}
+      ${state.followUp.location ? `<div class="meta">${esc(state.followUp.location)}</div>` : ""}</div>`;
+  } else {
+    html += `<p class="empty-note">Not set.</p>`;
+  }
+  html += `</div>`;
+
+  html += reviewGroup("General notes", "notes", state.notes, n => `<div class="review-item">${esc(n.note)}</div>`);
+
+  el.innerHTML = html;
+}
+
+function reviewGroup(title, stateKey, items, renderItem) {
+  const changed = !state.isUpdateMode || groupChanged(stateKey);
+  let html = `<div class="review-section${changed ? "" : " unchanged"}">
+    <h3>${title} ${state.isUpdateMode ? `<span class="badge ${changed ? "badge-changed" : "badge-unchanged"}">${changed ? "Changed" : "No change"}</span>` : ""}</h3>`;
+  if (!items || items.length === 0) {
+    html += `<p class="empty-note">None added.</p>`;
+  } else {
+    items.forEach(i => html += renderItem(i));
+  }
+  html += `</div>`;
+  return html;
+}
+
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>

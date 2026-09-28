@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Discharge Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F7F8F6;
+    --ink: #17251F;
+    --primary: #2D5D52;
+    --primary-dark: #1F433B;
+    --muted: #6E7B76;
+    --line: #DCE2DE;
+    --panel: #FFFFFF;
+    --er: #B0432C;
+    --er-bg: #FBEDE9;
+    --clinic: #C98A3E;
+    --clinic-bg: #FAF1E2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  main {
+    max-width: 520px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column; padding: 24px 20px 40px;
+  }
+
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  h1 { font-size: 19px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+
+  .field input {
+    width: 100%; padding: 14px; font-size: 18px; text-align: center;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--line); border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; margin-bottom: 14px;
+  }
+  .field input:focus { outline: none; border-color: var(--primary); }
+
+  .btn {
+    display: inline-block; padding: 12px 20px; border-radius: 4px;
+    border: 1px solid transparent; font-size: 15px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: var(--muted); cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--primary); border-color: var(--line); width: 100%; }
+
+  /* ---- Conversation screen ---- */
+  .conv-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .conv-header .code { color: var(--muted); font-size: 13px; }
+
+  .transcript-log {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .bubble { max-width: 85%; padding: 12px 14px; border-radius: 10px; font-size: 15px; line-height: 1.45; }
+  .bubble-patient { align-self: flex-end; background: var(--primary); color: #fff; }
+  .bubble-assistant { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
+  .bubble-escalate {
+    align-self: stretch; background: var(--er-bg); border: 2px solid var(--er);
+    color: var(--er); font-weight: 600; padding: 16px; border-radius: 6px; font-size: 16px;
+  }
+  .bubble-escalate.clinic { background: var(--clinic-bg); border-color: var(--clinic); color: var(--clinic); }
+
+  .mic-area { text-align: center; padding: 10px 0 4px; }
+  .mic-btn {
+    width: 84px; height: 84px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--primary); color: #fff; font-size: 28px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .mic-btn.listening { background: var(--er); animation: pulse 1.4s ease-in-out infinite; }
+  .mic-btn:disabled { background: var(--muted); cursor: not-allowed; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(176,67,44,0.35); }
+    50% { box-shadow: 0 0 0 14px rgba(176,67,44,0); }
+  }
+  .mic-status { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .live-caption { min-height: 20px; font-size: 14px; color: var(--muted); text-align: center; margin-top: 8px; font-style: italic; }
+
+  .consent-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 18px; margin-bottom: 16px;
+  }
+  .consent-box.scope { border-left: 4px solid var(--primary); }
+  .consent-box h3 { font-size: 14px; margin: 0 0 10px; }
+  .consent-box ul { margin: 0; padding-left: 20px; }
+  .consent-box li { margin-bottom: 6px; font-size: 14.5px; line-height: 1.4; }
+  .warning-er { border-left: 4px solid var(--er); }
+  .warning-er h3 { color: var(--er); }
+  .warning-clinic { border-left: 4px solid var(--clinic); }
+  .warning-clinic h3 { color: var(--clinic); }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; margin-left: 6px; vertical-align: middle;
+  }
+  .badge-er { background: var(--er-bg); color: var(--er); }
+  .badge-clinic { background: var(--clinic-bg); color: var(--clinic); }
+  .toast {
+    position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+    background: var(--primary-dark); color: #fff; padding: 10px 18px;
+    border-radius: 4px; font-size: 13.5px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease; z-index: 10;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<main>
+
+  <!-- ================= START SCREEN ================= -->
+  <div class="screen active" id="screen-start">
+    <h1>Your discharge assistant</h1>
+    <p class="sub">Enter the code your doctor gave you, or your phone number.</p>
+    <div class="field">
+      <input type="text" id="code-input" placeholder="Code or phone number" style="text-transform:none; letter-spacing:normal;">
+    </div>
+    <button class="btn btn-primary" onclick="startConversation()">Connect</button>
+  </div>
+
+  <!-- ================= CONSENT / SCOPE SCREEN ================= -->
+  <div class="screen" id="screen-consent">
+    <h1>Before we start</h1>
+    <div class="consent-box scope">
+      <p style="margin:0; font-size:14.5px; line-height:1.5;">
+        This assistant explains and answers questions about the discharge instructions
+        your doctor gave you. <strong>It does not diagnose you and cannot tell you
+        whether a symptom is serious.</strong> If you think you may be having a
+        medical emergency, call emergency services right away — don't wait for or
+        rely on this app.
+      </p>
+    </div>
+
+    <div class="consent-box warning-er">
+      <h3>Always go to the ER for:</h3>
+      <ul id="general-er-list"></ul>
+    </div>
+
+    <div class="consent-box warning-clinic" id="patient-specific-box" style="display:none;">
+      <h3>Your doctor also asked you to watch for:</h3>
+      <ul id="patient-specific-list"></ul>
+    </div>
+
+    <button class="btn btn-primary" onclick="acknowledgeConsent()">I understand — continue</button>
+  </div>
+
+  <!-- ================= CONVERSATION SCREEN ================= -->
+  <div class="screen" id="screen-conv">
+    <div class="conv-header">
+      <h1 style="margin:0;">Discharge assistant</h1>
+      <span class="code mono" id="conv-code"></span>
+    </div>
+
+    <div class="transcript-log" id="transcript-log"></div>
+
+    <div class="live-caption" id="live-caption"></div>
+    <div class="mic-area">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎤</button>
+      <div class="mic-status" id="mic-status">Tap the mic to ask a question</div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------
+const API_BASE = "http://localhost:8000";
+const TARGET_SAMPLE_RATE = 16000;
+
+// ---------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------
+let patientCode = null;
+let pendingInstructions = null; // holds fetched instructions between consent screen and conversation start
+let ws = null;
+let audioContext = null;
+let mediaStream = null;
+let scriptNode = null;
+let isListening = false;
+let awaitingAnswer = false;
+
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ---------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------
+async function startConversation() {
+  const identifier = document.getElementById("code-input").value.trim().toUpperCase();
+  if (!identifier) { toast("Enter your patient code or phone number"); return; }
+
+  // Resolve whatever the patient typed (code OR phone) to their actual
+  // patient_code — everything else in the app is keyed by code.
+  let code;
+  try {
+    const lookupRes = await fetch(`${API_BASE}/patients/lookup?identifier=${encodeURIComponent(identifier)}`);
+    if (lookupRes.status === 404) { toast("No patient found with that code or phone number"); return; }
+    if (!lookupRes.ok) throw new Error("lookup failed");
+    const patient = await lookupRes.json();
+    code = patient.patient_code;
+  } catch (err) {
+    toast("Couldn't reach the assistant — is the server running?");
+    return;
+  }
+
+  let instructions;
+  try {
+    const res = await fetch(`${API_BASE}/patients/${code}/current-instructions`);
+    if (!res.ok) throw new Error("lookup failed");
+    instructions = await res.json();
+  } catch (err) {
+    toast("Couldn't reach the assistant — is the server running?");
+    return;
+  }
+
+  patientCode = code;
+  pendingInstructions = instructions;
+  document.getElementById("conv-code").textContent = code;
+
+  renderConsentScreen(instructions);
+  showScreen("screen-consent");
+}
+
+// General emergency signs shown on the consent screen — kept in plain
+// language for patients, one per category. These mirror the categories in
+// app/red_flags.py's TIER1_RED_FLAGS on the backend; if that list changes,
+// update this one to match so what the patient is told lines up with what
+// the assistant actually watches for.
+const GENERAL_ER_SIGNS = [
+  "Trouble breathing or shortness of breath",
+  "Chest pain or pressure",
+  "Heavy or uncontrolled bleeding",
+  "Sudden confusion, slurred speech, a drooping face, or weakness on one side",
+  "Swelling in your throat or face, or trouble swallowing",
+  "Fainting or losing consciousness",
+];
+
+function renderConsentScreen(instructions) {
+  document.getElementById("general-er-list").innerHTML =
+    GENERAL_ER_SIGNS.map(s => `<li>${esc(s)}</li>`).join("");
+
+  const patientFlags = instructions.red_flags || [];
+  const specificBox = document.getElementById("patient-specific-box");
+  const specificList = document.getElementById("patient-specific-list");
+  if (patientFlags.length > 0) {
+    specificBox.style.display = "block";
+    specificList.innerHTML = patientFlags.map(f => {
+      const label = f.action === "go_to_er" ? "Go to the ER" : "Call your clinic";
+      return `<li>${esc(f.symptom)} <span class="badge ${f.action === "go_to_er" ? "badge-er" : "badge-clinic"}">${label}</span></li>`;
+    }).join("");
+  } else {
+    specificBox.style.display = "none";
+  }
+}
+
+function acknowledgeConsent() {
+  const instructions = pendingInstructions;
+  pendingInstructions = null;
+  showScreen("screen-conv");
+  greetWithUpdateCheck(patientCode, instructions);
+}
+
+// ---------------------------------------------------------------------
+// "Your doctor updated X" — compares each instruction's created_at against
+// the last time THIS BROWSER checked in for THIS patient code (localStorage,
+// per-viewer, never sent anywhere). Note: this assumes the browser's and
+// server's clocks are reasonably in sync, which is fine for a hackathon demo
+// on one machine but worth knowing if patient and server clocks ever drift.
+// ---------------------------------------------------------------------
+const LAST_VISIT_KEY_PREFIX = "discharge_assistant_last_visit_";
+
+const UPDATE_GROUP_LABELS = {
+  medications: "your medications",
+  activity_restrictions: "your activity restrictions",
+  wound_care: "your wound care instructions",
+  red_flags: "your warning signs to watch for",
+  general_notes: "your notes",
+};
+
+function greetWithUpdateCheck(code, instructions) {
+  let lastVisit = null;
+  try {
+    const stored = localStorage.getItem(LAST_VISIT_KEY_PREFIX + code);
+    if (stored) lastVisit = new Date(stored).getTime();
+  } catch (err) { /* localStorage unavailable — just skip the update check */ }
+
+  const changedLabels = [];
+  if (lastVisit !== null) {
+    for (const [group, label] of Object.entries(UPDATE_GROUP_LABELS)) {
+      const items = instructions[group] || [];
+      if (items.some(item => item.created_at && new Date(item.created_at).getTime() > lastVisit)) {
+        changedLabels.push(label);
+      }
+    }
+    if (instructions.follow_up && instructions.follow_up.created_at &&
+        new Date(instructions.follow_up.created_at).getTime() > lastVisit) {
+      changedLabels.push("your follow-up appointment");
+    }
+  }
+
+  // Record this visit for next time, regardless of what we found.
+  try { localStorage.setItem(LAST_VISIT_KEY_PREFIX + code, new Date().toISOString()); } catch (err) {}
+
+  if (changedLabels.length > 0) {
+    const list = changedLabels.length === 1 ? changedLabels[0]
+      : changedLabels.slice(0, -1).join(", ") + " and " + changedLabels[changedLabels.length - 1];
+    const message = `Before we start — your doctor updated ${list} since you last checked in. Ask me about it, or tap the mic to continue.`;
+    addBubble("assistant", message);
+    speak(message);
+  } else {
+    const message = "I'm ready. Tap the microphone and ask me anything about your discharge instructions.";
+    addBubble("assistant", message);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Transcript log UI
+// ---------------------------------------------------------------------
+function addBubble(kind, text) {
+  const log = document.getElementById("transcript-log");
+  const el = document.createElement("div");
+  el.className = kind === "patient" ? "bubble bubble-patient" : "bubble bubble-assistant";
+  el.textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function addEscalationBubble(message, action) {
+  const log = document.getElementById("transcript-log");
+  const el = document.createElement("div");
+  el.className = "bubble bubble-escalate" + (action === "call_clinic" ? " clinic" : "");
+  el.textContent = message;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ---------------------------------------------------------------------
+// Text-to-speech (ElevenLabs, via the backend — API key never touches
+// the browser). Streamed so playback can start before the full clip is
+// generated, and interrupts any audio already playing (mirrors the old
+// speechSynthesis.cancel() behavior so a new answer doesn't overlap one
+// still speaking).
+// ---------------------------------------------------------------------
+let turnEndedAt = 0;   // performance.now() when the patient's turn ended — for latency logging
+let ttsAudioEl = null;
+let currentTtsReader = null;    // the fetch body reader — cancelled on barge-in
+let currentMediaSource = null;
+
+function getTtsAudioEl() {
+  if (!ttsAudioEl) {
+    ttsAudioEl = new Audio();
+  }
+  return ttsAudioEl;
+}
+
+// Cuts off whatever is currently playing/streaming immediately. Called both
+// at the start of every new speak() call and, for barge-in, the moment the
+// patient starts talking again — see the ws.onmessage handler below.
+function stopSpeaking() {
+  const audioEl = getTtsAudioEl();
+  audioEl.pause();
+  if (currentTtsReader) {
+    currentTtsReader.cancel().catch(() => {});
+    currentTtsReader = null;
+  }
+  if (currentMediaSource && currentMediaSource.readyState === "open") {
+    try { currentMediaSource.endOfStream(); } catch (e) {}
+  }
+  currentMediaSource = null;
+  audioEl.removeAttribute("src");
+  audioEl.load();
+}
+
+const SUPPORTS_STREAMING_AUDIO =
+  "MediaSource" in window && MediaSource.isTypeSupported("audio/mpeg");
+
+async function speak(text, urgent = false) {
+  const speakStartedAt = performance.now();
+  stopSpeaking();
+  const audioEl = getTtsAudioEl();
+  audioEl.playbackRate = urgent ? 0.95 : 1.0;
+
+  if (!SUPPORTS_STREAMING_AUDIO) {
+    // Fallback for browsers without MSE support for audio/mpeg (e.g.
+    // Safari): buffer the whole clip. Higher latency than the streaming
+    // path below, but still works everywhere.
+    try {
+      const res = await fetch(`${API_BASE}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) throw new Error(`TTS request failed (${res.status})`);
+      const blob = await res.blob();
+      audioEl.src = URL.createObjectURL(blob);
+      await audioEl.play();
+    } catch (err) {
+      console.error("TTS failed:", err);
+    }
+    return;
+  }
+
+  // Streaming path: play audio as chunks arrive from the backend, rather
+  // than waiting for the whole response (that wait was the real source of
+  // the answer-to-audio delay — the backend was already streaming from
+  // Deepgram; the frontend was the part buffering everything first).
+  try {
+    const res = await fetch(`${API_BASE}/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      let detail = "";
+      try { detail = (await res.json()).detail; } catch (e) {}
+      throw new Error(`TTS request failed (${res.status}): ${detail}`);
+    }
+
+    const mediaSource = new MediaSource();
+    currentMediaSource = mediaSource;
+    audioEl.src = URL.createObjectURL(mediaSource);
+
+    await new Promise((resolveOpen) => {
+      mediaSource.addEventListener("sourceopen", resolveOpen, { once: true });
+    });
+    if (currentMediaSource !== mediaSource) return; // interrupted while opening
+
+    const sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+    const reader = res.body.getReader();
+    currentTtsReader = reader;
+    let startedPlaying = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (currentTtsReader !== reader) return; // interrupted mid-stream (barge-in)
+
+      if (done) {
+        if (mediaSource.readyState === "open") mediaSource.endOfStream();
+        break;
+      }
+
+      await new Promise((resolveAppend) => {
+        sourceBuffer.addEventListener("updateend", resolveAppend, { once: true });
+        sourceBuffer.appendBuffer(value);
+      });
+      if (currentTtsReader !== reader) return;
+
+      if (!startedPlaying) {
+        startedPlaying = true;
+        audioEl.addEventListener("playing", () => {
+          console.log(`[timing] turn ended -> audio playing: ${Math.round(performance.now() - turnEndedAt)} ms  (speak() -> playing: ${Math.round(performance.now() - speakStartedAt)} ms)`);
+        }, { once: true });
+        audioEl.play().catch(() => {}); // start on the FIRST chunk, not the last
+      }
+    }
+  } catch (err) {
+    // Voice is a nice-to-have on top of the text already shown in the
+    // transcript — never block the conversation just because TTS failed.
+    console.error("TTS failed:", err);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Backend call: red-flag check happens server-side, before any LLM call
+// ---------------------------------------------------------------------
+async function askBackend(question) {
+  awaitingAnswer = true;
+  setMicStatus("Thinking…");
+  try {
+    const res = await fetch(`${API_BASE}/patients/${patientCode}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (!res.ok) throw new Error("ask failed");
+    const data = await res.json();
+    console.log(`[timing] turn ended -> answer received: ${Math.round(performance.now() - turnEndedAt)} ms`);
+
+    if (data.escalate) {
+      addEscalationBubble(data.message, data.action);
+      speak(data.message, true);
+      // Deliberately do NOT auto-resume listening after an escalation —
+      // the patient should read/hear this fully before anything else happens.
+      stopListening();
+      setMicStatus("Tap the mic when you're ready to continue");
+    } else {
+      addBubble("assistant", data.answer);
+      speak(data.answer);
+      setMicStatus("Tap the mic to ask another question");
+    }
+  } catch (err) {
+    toast("Something went wrong reaching the assistant");
+    setMicStatus("Tap the mic to try again");
+  } finally {
+    awaitingAnswer = false;
+  }
+}
+
+function setMicStatus(text) {
+  document.getElementById("mic-status").textContent = text;
+}
+
+// ---------------------------------------------------------------------
+// AssemblyAI streaming: mint token server-side, connect WS from browser,
+// stream mic audio, act on finalized turns.
+// ---------------------------------------------------------------------
+async function toggleMic() {
+  if (isListening) {
+    stopListening();
+  } else {
+    await startListening();
+  }
+}
+
+async function startListening() {
+  if (awaitingAnswer) return;
+
+  let tokenData;
+  try {
+    const res = await fetch(`${API_BASE}/assemblyai/token?expires_in_seconds=60`);
+    if (!res.ok) throw new Error("token mint failed");
+    tokenData = await res.json();
+  } catch (err) {
+    toast("Couldn't get a listening token — check ASSEMBLYAI_API_KEY on the server");
+    return;
+  }
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (err) {
+    toast("Microphone access is needed to talk to the assistant");
+    return;
+  }
+
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = audioContext.createMediaStreamSource(mediaStream);
+
+  const wsUrl = `wss://streaming.assemblyai.com/v3/ws?sample_rate=${TARGET_SAMPLE_RATE}&format_turns=true&token=${encodeURIComponent(tokenData.token)}`;
+  ws = new WebSocket(wsUrl);
+  ws.binaryType = "arraybuffer";
+
+  ws.onopen = () => {
+    isListening = true;
+    document.getElementById("mic-btn").classList.add("listening");
+    setMicStatus("Listening…");
+
+    // ScriptProcessorNode is deprecated but needs no separate worklet file
+    // and works everywhere — fine for a hackathon demo. A production
+    // version would move this to an AudioWorklet.
+    scriptNode = audioContext.createScriptProcessor(4096, 1, 1);
+    source.connect(scriptNode);
+    scriptNode.connect(audioContext.destination);
+
+    scriptNode.onaudioprocess = (event) => {
+      if (!isListening || ws.readyState !== WebSocket.OPEN) return;
+      const input = event.inputBuffer.getChannelData(0);
+      const resampled = resampleTo16k(input, audioContext.sampleRate);
+      const pcm16 = floatTo16BitPCM(resampled);
+      ws.send(pcm16);
+    };
+  };
+
+  ws.onmessage = (event) => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch (e) { return; }
+
+    if (msg.type === "Turn") {
+      const transcript = (msg.transcript || "").trim();
+      document.getElementById("live-caption").textContent = transcript;
+
+      // BARGE-IN: the moment the patient starts talking (any partial
+      // transcript with real content), cut off the assistant mid-sentence.
+      // The 3-character floor avoids interrupting on a stray noise blip.
+      if (transcript.length >= 3) {
+        stopSpeaking();
+      }
+
+      if (msg.end_of_turn && transcript) {
+        turnEndedAt = performance.now();
+        document.getElementById("live-caption").textContent = "";
+        addBubble("patient", transcript);
+        askBackend(transcript);
+      }
+    } else if (msg.type === "Error") {
+      toast("Listening error: " + (msg.error || "unknown"));
+    }
+  };
+
+  ws.onerror = () => toast("Connection to the listening service failed");
+  ws.onclose = () => { if (isListening) stopListening(); };
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById("mic-btn").classList.remove("listening");
+  document.getElementById("live-caption").textContent = "";
+
+  if (scriptNode) { scriptNode.disconnect(); scriptNode = null; }
+  if (audioContext) { audioContext.close(); audioContext = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  if (ws && ws.readyState === WebSocket.OPEN) { ws.close(); }
+  ws = null;
+}
+
+// ---------------------------------------------------------------------
+// Audio helpers: browser mic audio comes in at the device's native sample
+// rate (often 44100/48000 Hz) as 32-bit float; AssemblyAI wants 16kHz
+// 16-bit PCM. Simple linear-interpolation resampling is plenty for speech.
+// ---------------------------------------------------------------------
+function resampleTo16k(float32Array, inputSampleRate) {
+  if (inputSampleRate === TARGET_SAMPLE_RATE) return float32Array;
+  const ratio = inputSampleRate / TARGET_SAMPLE_RATE;
+  const outputLength = Math.round(float32Array.length / ratio);
+  const result = new Float32Array(outputLength);
+  for (let i = 0; i < outputLength; i++) {
+    const srcIndex = i * ratio;
+    const idxLow = Math.floor(srcIndex);
+    const idxHigh = Math.min(idxLow + 1, float32Array.length - 1);
+    const frac = srcIndex - idxLow;
+    result[i] = float32Array[idxLow] * (1 - frac) + float32Array[idxHigh] * frac;
+  }
+  return result;
+}
+
+function floatTo16BitPCM(float32Array) {
+  const buffer = new ArrayBuffer(float32Array.length * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < float32Array.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, float32Array[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return buffer;
+}
+</script>
+</body>
+</html>
