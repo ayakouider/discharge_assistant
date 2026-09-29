@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.create_db import init_db
@@ -158,6 +158,40 @@ def health():
 
 
 # ---------------------------------------------------------------------------
+# Frontend pages — served by this same app, so the whole project is one
+# deployment with one URL. Both HTML files use API_BASE = window.location.origin,
+# so they work correctly here with no further changes needed for deployment.
+# ---------------------------------------------------------------------------
+
+@app.get("/", response_class=HTMLResponse)
+def landing_page():
+    return """
+    <html><head><title>Discharge Assistant</title>
+    <style>
+      body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 80px auto; text-align: center; color: #17251F; }
+      a { display: block; margin: 16px 0; padding: 14px; background: #2D5D52; color: #fff;
+          text-decoration: none; border-radius: 4px; font-weight: 500; }
+      a:hover { background: #1F433B; }
+    </style></head>
+    <body>
+      <h1>Discharge Assistant</h1>
+      <a href="/doctor">Doctor — set up or update instructions</a>
+      <a href="/patient">Patient — talk to your assistant</a>
+    </body></html>
+    """
+
+
+@app.get("/doctor")
+def doctor_ui():
+    return FileResponse("web/intake_form.html")
+
+
+@app.get("/patient")
+def patient_ui():
+    return FileResponse("web/voice_assistant.html")
+
+
+# ---------------------------------------------------------------------------
 # Text-to-speech (Deepgram Aura-2). Streamed through rather than buffered
 # server-side — see tts.py. The frontend must ALSO consume this
 # progressively (not buffer the whole blob) or streaming here doesn't
@@ -223,7 +257,7 @@ def ask(code: str, payload: AskIn):
         }
 
     if is_closing_remark(payload.question):
-        return {"escalate": False, "answer": CLOSING_REPLY, "logged_symptom": False}
+        return {"escalate": False, "answer": CLOSING_REPLY, "logged_symptom": False, "closing": True}
 
     t0 = time.perf_counter()
     answer = answer_question(payload.question, instructions)

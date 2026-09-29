@@ -7,3 +7,6 @@ pydantic
 requests
 google-genai
 python-dotenv
+dnspython
+
+

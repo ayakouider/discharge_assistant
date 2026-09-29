@@ -183,7 +183,11 @@
 // ---------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------
-const API_BASE = "http://localhost:8000";
+// Same-origin by default, since this page is served BY the backend
+// itself (see /doctor and /patient routes in main.py) — this line
+// works unmodified whether running locally or deployed, so it never
+// needs editing again for deployment.
+const API_BASE = window.location.origin;
 const TARGET_SAMPLE_RATE = 16000;
 
 // ---------------------------------------------------------------------
@@ -518,6 +522,14 @@ async function askBackend(question) {
       // the patient should read/hear this fully before anything else happens.
       stopListening();
       setMicStatus("Tap the mic when you're ready to continue");
+    } else if (data.closing) {
+      addBubble("assistant", data.answer);
+      speak(data.answer);
+      // A closing remark ("thank you", "bye") ends the conversation
+      // naturally — stop listening instead of leaving the mic open with
+      // nothing more expected from the patient.
+      stopListening();
+      setMicStatus("Tap the mic if you have another question");
     } else {
       addBubble("assistant", data.answer);
       speak(data.answer);
