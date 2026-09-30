@@ -101,7 +101,7 @@ def answer_question(question: str, instructions: dict) -> str:
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
             max_output_tokens=800,
-            thinking_config=types.ThinkingConfig(thinking_budget=0)
+            thinking_config=types.ThinkingConfig(thinking_level="minimal")
         ),
     )
     return (response.text or "").strip()
